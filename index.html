@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¿Por qué escoger la vida?</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #87ceeb;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Escenario general con movimiento de cámara */
+        .viewport {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .world {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200vw;
+            height: 400vh;
+            transition: transform 1.2s cubic-bezier(0.65, 0, 0.35, 1);
+            transform: translateY(-100vh) translateX(0vw); /* Empieza mostrando la Tierra (sección inferior izquierda) */
+        }
+
+        .world.sky-active {
+            transform: translateY(0vh) translateX(0vw); /* Vista Cielo */
+        }
+
+        .world.peace-active {
+            transform: translateY(-200vh) translateX(0vw); /* Vista Ambiente Tranquilo / Frases */
+        }
+
+        .world.opinion-active {
+            transform: translateY(-300vh) translateX(0vw); /* Vista "¿Qué pienso yo de ti?" */
+        }
+
+        .world.final-active {
+            transform: translateY(-300vh) translateX(-100vw); /* Vista Mensaje Final (Derecha) */
+        }
+
+        /* Secciones de Fondo */
+        .sky-section {
+            height: 100vh;
+            width: 100vw;
+            background: linear-gradient(to bottom, #4a90e2 0%, #87ceeb 100%);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .ground-section {
+            height: 100vh;
+            width: 100vw;
+            background: linear-gradient(to bottom, #87ceeb 0%, #b0e0e6 60%, #556b2f 60%, #483d8b 100%);
+            position: absolute;
+            top: 100vh;
+            left: 0;
+        }
+
+        .peace-section {
+            height: 100vh;
+            width: 100vw;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #1a252f 100%);
+            position: absolute;
+            top: 200vh;
+            left: 0;
+        }
+
+        .opinion-section {
+            height: 100vh;
+            width: 100vw;
+            background: linear-gradient(135deg, #1f1c2c 0%, #928dab 100%);
+            position: absolute;
+            top: 300vh;
+            left: 0;
+        }
+
+        .final-section {
+            height: 100vh;
+            width: 100vw;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #feada6 100%);
+            position: absolute;
+            top: 300vh;
+            left: 100vw;
+        }
+
+        /* Elementos Decorativos */
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 50px;
+        }
+        .cloud-1 { top: 20%; left: 15%; width: 140px; height: 45px; }
+        .cloud-2 { top: 35%; right: 15%; width: 200px; height: 60px; }
+
+        .tree {
+            position: absolute;
+            bottom: 40%;
+            width: 0;
+            height: 0;
+            border-left: 40px solid transparent;
+            border-right: 40px solid transparent;
+            border-bottom: 120px solid #2e6f40;
+        }
+
+        .tree::after {
+            content: '';
+            position: absolute;
+            top: 60px;
+            left: -15px;
+            width: 30px;
+            height: 60px;
+            background-color: #5c4033;
+        }
+
+        .tree-1 { left: 10%; transform: scale(1.2); }
+        .tree-2 { left: 25%; transform: scale(0.9); }
+        .tree-3 { right: 20%; transform: scale(1.1); }
+        .tree-4 { right: 8%; transform: scale(0.8); }
+
+        /* Contenedores de Tarjetas */
+        .card-layer {
+            position: absolute;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .sky-cards { top: 0; left: 0; }
+        .ground-cards { top: 100vh; left: 0; }
+        .peace-cards { top: 200vh; left: 0; }
+        .opinion-cards { top: 300vh; left: 0; }
+        .final-cards { top: 300vh; left: 100vw; }
+
+        .card {
+            position: relative;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(8px);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 550px;
+            width: 90%;
+            min-height: 380px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+        }
+
+        /* Tarjeta extendida */
+        .extended-card {
+            max-width: 750px;
+            width: 95%;
+            background: rgba(255, 255, 255, 0.96);
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 35px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            transition: opacity 0.3s ease;
+        }
+
+        .extended-card h1 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .final-card p {
+            font-size: 1.25rem;
+            color: #2c3e50;
+            line-height: 1.7;
+            font-weight: 500;
+        }
+
+        .media-icon {
+            font-size: 5rem;
+            margin: 20px 0;
+            user-select: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .pulse {
+            animation: pulse 1.8s infinite ease-in-out;
+            color: #e74c3c;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        /* Lista de Frases */
+        .quotes-list {
+            list-style: none;
+            text-align: left;
+            margin: 15px 0;
+            padding: 0;
+            max-height: 45vh;
+            overflow-y: auto;
+            padding-right: 5px;
+            width: 100%;
+        }
+
+        .quotes-list li {
+            background: #f1f8e9;
+            border-left: 4px solid #81c784;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #333;
+            line-height: 1.4;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+
+        .opinion-list li {
+            background: #f3e5f5;
+            border-left: 4px solid #ba68c8;
+        }
+
+        /* Botones de Navegación */
+        .nav-arrow {
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            background-color: #ff6b6b;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+            border: none;
+            outline: none;
+            transition: background-color 0.3s, transform 0.3s, opacity 0.3s;
+            z-index: 20;
+        }
+
+        .prev-arrow {
+            left: -25px;
+            top: 50%;
+            animation: floatLeft 2s infinite ease-in-out;
+        }
+
+        .next-arrow {
+            right: -25px;
+            top: 50%;
+            animation: floatRight 2s infinite ease-in-out;
+        }
+
+        .up-arrow {
+            top: -25px;
+            left: 50%;
+            animation: floatUp 2s infinite ease-in-out;
+        }
+
+        .down-arrow {
+            bottom: -25px;
+            left: 50%;
+            animation: floatDown 2s infinite ease-in-out;
+        }
+
+        .nav-arrow:hover {
+            background-color: #ee5253;
+        }
+
+        .prev-arrow:hover { transform: translateY(-50%) scale(1.1); }
+        .next-arrow:hover { transform: translateY(-50%) scale(1.1); }
+        .up-arrow:hover { transform: translateX(-50%) scale(1.1); }
+        .down-arrow:hover { transform: translateX(-50%) scale(1.1); }
+
+        /* Botón de acción especial */
+        .action-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+            transition: background-color 0.3s, transform 0.3s;
+            margin-top: 15px;
+        }
+
+        .action-btn:hover {
+            background-color: #219653;
+            transform: scale(1.05);
+        }
+
+        @keyframes floatRight {
+            0%, 100% { transform: translateY(-50%) translateX(0); }
+            50% { transform: translateY(-50%) translateX(8px); }
+        }
+
+        @keyframes floatLeft {
+            0%, 100% { transform: translateY(-50%) translateX(0); }
+            50% { transform: translateY(-50%) translateX(-8px); }
+        }
+
+        @keyframes floatUp {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-8px); }
+        }
+
+        @keyframes floatDown {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(8px); }
+        }
+
+        /* Transiciones Horizontales */
+        .slide-out-left { transform: translateX(-60px); opacity: 0; }
+        .slide-out-right { transform: translateX(60px); opacity: 0; }
+        .slide-in-left { animation: slideInLeft 0.4s forwards ease-out; }
+        .slide-in-right { animation: slideInRight 0.4s forwards ease-out; }
+
+        @keyframes slideInRight {
+            from { transform: translateX(60px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-60px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="viewport">
+        <div class="world" id="world">
+            <!-- Cielo (Piso superior 0) -->
+            <div class="sky-section">
+                <div class="cloud cloud-1"></div>
+                <div class="cloud cloud-2"></div>
+            </div>
+
+            <!-- Tierra (Piso 1) -->
+            <div class="ground-section">
+                <div class="tree tree-1"></div>
+                <div class="tree tree-2"></div>
+                <div class="tree tree-3"></div>
+                <div class="tree tree-4"></div>
+            </div>
+
+            <!-- Ambiente Tranquilo (Piso 2) -->
+            <div class="peace-section"></div>
+
+            <!-- Opinión Personal (Piso 3) -->
+            <div class="opinion-section"></div>
+
+            <!-- Mensaje Final (Piso 3 Derecha) -->
+            <div class="final-section"></div>
+
+            <!-- Tarjeta en la Sección del Mensaje Final -->
+            <div class="card-layer final-cards">
+                <div class="card extended-card final-card">
+                    <button class="nav-arrow prev-arrow" onclick="goToOpinion()" aria-label="Volver a ¿Qué pienso yo de ti?">⬅</button>
+                    <div class="media-icon pulse">🌟</div>
+                    <p>ceci, yo, tu familia, tus amigos, tus maestros y demás gente solo queremos una cosa, la cual es verte feliz cuando realmente lo eres. No dejes que nada te hunda, busca una salida, pero no solo tú, tus amigos, pareja y familia te guiarán hasta encontrar la salida verdadera. Cualquier cosa que me quieras decir, estoy siempre contigo.</p>
+                </div>
+            </div>
+
+            <!-- Tarjetas en la Sección de Opinión Personal -->
+            <div class="card-layer opinion-cards">
+                <div class="card extended-card">
+                    <button class="nav-arrow up-arrow" onclick="goToPeace()" aria-label="Volver a Frases Motivadoras">⬆</button>
+                    <button class="nav-arrow next-arrow" onclick="goToFinal()" aria-label="Ir al Mensaje Final">➔</button>
+                    <h1>¿Qué pienso yo de ti?</h1>
+                    <ul class="quotes-list opinion-list">
+                        <li>✨ "Una persona fuerte, precoz y perspicaz que nunca se rinde"</li>
+                        <li>🤝 "Mi primer mejor amigo verdadero"</li>
+                        <li>💎 "Una persona irremplazable"</li>
+                        <li>🌟 "Una persona con una vida pura y brillante por delante"</li>
+                        <li>🛡️ "Uno de mis lugares seguros y alguien en quien puedo confiar"</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Tarjetas en el Ambiente Tranquilo (Frases Motivadoras) -->
+            <div class="card-layer peace-cards">
+                <div class="card extended-card">
+                    <button class="nav-arrow down-arrow" onclick="goToOpinion()" aria-label="Bajar a ¿Qué pienso yo de ti?">⬇</button>
+                    <button class="nav-arrow up-arrow" onclick="goToSky()" aria-label="Volver al cielo">⬆</button>
+                    <h1>Un espacio para respirar y seguir</h1>
+                    <ul class="quotes-list">
+                        <li>🌿 "Debes continuar, aunque hayas perdido a alguien..."</li>
+                        <li>🌱 "Sigue adelante, no te hundas, aún hay mucho que ver"</li>
+                        <li>💪 "Disfruta de tu vida, tus puntos débiles solo te hacen más fuerte"</li>
+                        <li>🔥 "El miedo pierde su efecto cuando lo enfrentas cara a cara"</li>
+                        <li>🤝 "Esa persona se mantendrá fiel contigo, ¿quién sabe? Hasta podrían formar una familia en el futuro"</li>
+                    </ul>
+                    <p style="font-size: 0.9rem; color: #555; margin-top: 5px;">Cada paso que das hoy construye un refugio seguro para tu mañana.</p>
+                </div>
+            </div>
+
+            <!-- Tarjetas en el Cielo -->
+            <div class="card-layer sky-cards">
+                <div class="card" id="skyCard">
+                    <button class="nav-arrow prev-arrow" id="skyPrevBtn" onclick="changeSkyPage(-1)" aria-label="Página anterior" style="display: none;">⬅</button>
+                    <button class="nav-arrow down-arrow" onclick="goToGround()" aria-label="Bajar a la tierra">⬇</button>
+                    
+                    <h1 id="skyTitleText">Coméntaselo a tus padres, ellos te entenderán por la confianza que tienes con ellos y, de hecho, se sentirán tranquilos sabiendo que acudiste a ellos.</h1>
+                    <div class="media-icon" id="skyMediaContainer">☀️</div>
+                    
+                    <button class="nav-arrow next-arrow" id="skyNextBtn" onclick="changeSkyPage(1)" aria-label="Siguiente página">➔</button>
+                </div>
+            </div>
+
+            <!-- Tarjetas en la Tierra -->
+            <div class="card-layer ground-cards">
+                <div class="card" id="card">
+                    <button class="nav-arrow prev-arrow" id="prevBtn" onclick="changePage(-1)" aria-label="Página anterior" style="display: none;">⬅</button>
+                    <h1 id="titleText">¿Por qué escoger la vida?</h1>
+                    <div class="media-icon pulse" id="mediaContainer">❤️</div>
+                    <button class="nav-arrow next-arrow" id="nextBtn" onclick="changePage(1)" aria-label="Siguiente página">➔</button>
+                    <button class="nav-arrow up-arrow" id="upBtn" onclick="goToSky()" aria-label="Subir al cielo" style="display: none;">⬆</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Lógica de Tarjetas en la Tierra
+        let currentIndex = 0;
+        let isAnimating = false;
+
+        const pages = [
+            { text: "¿Por qué escoger la vida?", media: "❤️", isPulse: true },
+            { text: "Primero, Ceci no sabrá que hacer, fácilmente podría ser la más afectada.", media: " 🥺 ", isPulse: false },
+            { text: "Yo no podré cargar con la culpa de que no hice nada...", media: "💔", isPulse: false },
+            { text: "Tus padres estarían tristes y confundidos", media: "🌧️", isPulse: false },
+            { text: "¿Entonces.... como me puedo correjir sin preocupar a los demás?", media: "💭", isPulse: false }
+        ];
+
+        function changePage(direction) {
+            if (isAnimating) return;
+
+            const newIndex = currentIndex + direction;
+            if (newIndex < 0 || newIndex >= pages.length) return;
+
+            isAnimating = true;
+            const card = document.getElementById('card');
+            const title = document.getElementById('titleText');
+            const media = document.getElementById('mediaContainer');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const upBtn = document.getElementById('upBtn');
+
+            card.classList.remove('slide-in-left', 'slide-in-right');
+            card.classList.add(direction === 1 ? 'slide-out-left' : 'slide-out-right');
+
+            setTimeout(() => {
+                currentIndex = newIndex;
+                const data = pages[currentIndex];
+
+                title.innerText = data.text;
+                media.innerText = data.media;
+
+                if (data.isPulse) {
+                    media.classList.add('pulse');
+                } else {
+                    media.classList.remove('pulse');
+                }
+
+                prevBtn.style.display = currentIndex === 0 ? 'none' : 'flex';
+                
+                if (currentIndex === pages.length - 1) {
+                    nextBtn.style.display = 'none';
+                    upBtn.style.display = 'flex';
+                } else {
+                    nextBtn.style.display = 'flex';
+                    upBtn.style.display = 'none';
+                }
+
+                card.classList.remove('slide-out-left', 'slide-out-right');
+                card.classList.add(direction === 1 ? 'slide-in-right' : 'slide-in-left');
+
+                setTimeout(() => {
+                    isAnimating = false;
+                }, 400);
+            }, 300);
+        }
+
+        // Lógica de Tarjetas en el Cielo
+        let skyIndex = 0;
+        let isSkyAnimating = false;
+
+        const skyPages = [
+            { text: "Coméntaselo a tus padres, ellos te entenderán por la confianza que tienes con ellos", media: "☀️", isLast: false },
+            { text: "Acude a un profesional para que liberes todo lo que tienes dentro e iniciar una terapia que te guíe por el camino correcto", media: "🌱", isLast: false },
+            { text: "Con el tiempo, todo mejorará y mi mejor amigo, a quien le dedico toda esta página, será la persona más feliz del mundo :D", media: "✨", isLast: true }
+        ];
+
+        function changeSkyPage(direction) {
+            if (isSkyAnimating) return;
+
+            const newIndex = skyIndex + direction;
+            if (newIndex < 0 || newIndex >= skyPages.length) return;
+
+            isSkyAnimating = true;
+            const card = document.getElementById('skyCard');
+            const title = document.getElementById('skyTitleText');
+            const media = document.getElementById('skyMediaContainer');
+            const prevBtn = document.getElementById('skyPrevBtn');
+            const nextBtn = document.getElementById('skyNextBtn');
+
+            const existingBtn = document.getElementById('quotesBtnContainer');
+            if (existingBtn) existingBtn.remove();
+
+            card.classList.remove('slide-in-left', 'slide-in-right');
+            card.classList.add(direction === 1 ? 'slide-out-left' : 'slide-out-right');
+
+            setTimeout(() => {
+                skyIndex = newIndex;
+                const data = skyPages[skyIndex];
+
+                title.innerText = data.text;
+                media.innerText = data.media;
+
+                prevBtn.style.display = skyIndex === 0 ? 'none' : 'flex';
+                
+                if (data.isLast) {
+                    nextBtn.style.display = 'none';
+                    const btnContainer = document.createElement('div');
+                    btnContainer.id = 'quotesBtnContainer';
+                    btnContainer.innerHTML = `<button class="action-btn" onclick="goToPeace()">Frases Motivadoras</button>`;
+                    card.appendChild(btnContainer);
+                } else {
+                    nextBtn.style.display = 'flex';
+                }
+
+                card.classList.remove('slide-out-left', 'slide-out-right');
+                card.classList.add(direction === 1 ? 'slide-in-right' : 'slide-in-left');
+
+                setTimeout(() => {
+                    isSkyAnimating = false;
+                }, 400);
+            }, 300);
+        }
+
+        // Transiciones entre Secciones
+        function clearWorldClasses() {
+            const world = document.getElementById('world');
+            world.classList.remove('sky-active', 'peace-active', 'opinion-active', 'final-active');
+        }
+
+        function goToGround() {
+            clearWorldClasses();
+        }
+
+        function goToSky() {
+            clearWorldClasses();
+            document.getElementById('world').classList.add('sky-active');
+        }
+
+        function goToPeace() {
+            clearWorldClasses();
+            document.getElementById('world').classList.add('peace-active');
+        }
+
+        function goToOpinion() {
+            clearWorldClasses();
+            document.getElementById('world').classList.add('opinion-active');
+        }
+
+        function goToFinal() {
+            clearWorldClasses();
+            document.getElementById('world').classList.add('final-active');
+        }
+    </script>
+</body>
+</html>
